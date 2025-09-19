@@ -1,0 +1,38 @@
+name: Auto-Join Google Meet
+
+on:
+  schedule:
+    # 4:30 AM PT during DST ≈ 11:30 UTC; change if needed
+    - cron: "30 11 * * *"
+  workflow_dispatch: {}   # lets you run it manually from the Actions tab
+  # (Optional) uncomment to run on every push:
+  # push: {}
+
+jobs:
+  join:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Google Chrome
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Selenium
+        run: pip install --upgrade pip selenium
+
+      - name: Run Meet bot (headless)
+        env:
+          MEET_URL: ${{ secrets.MEET_URL }}
+          LEAVE_AFTER_MINUTES: "30"
+        run: python meet_auto_join.py
