@@ -1,38 +1,36 @@
 name: Auto-Join Google Meet
-
 on:
   schedule:
-    - cron: "30 11 * * *"
+    - cron: "30 11 * * *"   # 4:30 AM PT during DST; adjust for your timezone
   workflow_dispatch: {}
 
 jobs:
-  join:
+  run:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install Google Chrome
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y wget gnupg
-          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
-          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google-chrome.list
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Setup Node
+        uses: actions/setup-node@v4
         with:
-          python-version: "3.11"
+          node-version: '20'
 
-      - name: Install deps
+      - name: Install Playwright
         run: |
-          python -m pip install --upgrade pip
-          pip install selenium
+          npm i -D @playwright/test
+          npx playwright install chromium
 
-      - name: Run Meet bot (headless)
+      - name: Run bot
         env:
           MEET_URL: ${{ secrets.MEET_URL }}
-          GUEST_NAME: ${{ secrets.GUEST_NAME }}
-          LEAVE_AFTER_MINUTES: "1"   # keep short while testing
-        run: python meet_auto_join.py
+          PLAYWRIGHT_STATE_B64: ${{ secrets.PLAYWRIGHT_STATE_B64 }}
+          LEAVE_AFTER_MINUTES: ${{ secrets.LEAVE_AFTER_MINUTES || '1' }}
+        run: node meet_playwright.js
+
+      - name: Upload screenshot proof
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: meet-proof
+          path: meet_after_join.png
+          if-no-files-found: warn
