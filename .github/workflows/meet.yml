@@ -27,10 +27,19 @@ jobs:
           LEAVE_AFTER_MINUTES: ${{ secrets.LEAVE_AFTER_MINUTES || '1' }}
         run: node meet_playwright.js
 
-      - name: Upload screenshot proof
+      - name: Upload debug artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: meet-proof
-          path: meet_after_join.png
+          name: meet-debug
+          path: |
+            01_accounts.png
+            01_accounts.html
+            02_meet_loaded.png
+            02_meet_loaded.html
+            03_meet_no_join.png
+            03_meet_no_join.html
+            04_after_click.png
+            04_after_click.html
+            trace.zip
           if-no-files-found: warn
