@@ -23,16 +23,32 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y google-chrome-stable
 
+      - name: Install ChromeDriver
+        run: |
+          CHROME_VERSION=$(google-chrome --version | grep -oP '\d+\.\d+\.\d+')
+          CHROMEDRIVER_VERSION=$(curl -s "https://chromedriver.storage.googleapis.com/LATEST_RELEASE_${CHROME_VERSION%.*}")
+          wget -O /tmp/chromedriver.zip "https://chromedriver.storage.googleapis.com/${CHROMEDRIVER_VERSION}/chromedriver_linux64.zip"
+          sudo unzip /tmp/chromedriver.zip -d /usr/local/bin/
+          sudo chmod +x /usr/local/bin/chromedriver
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
-      - name: Install Selenium
-        run: pip install --upgrade pip selenium
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Verify Chrome installation
+        run: |
+          google-chrome --version
+          chromedriver --version
 
       - name: Run Meet bot (headless)
         env:
           MEET_URL: ${{ secrets.MEET_URL }}
-          LEAVE_AFTER_MINUTES: "30"
+          GUEST_NAME: ${{ secrets.GUEST_NAME }}
+          LEAVE_AFTER_MINUTES: "1"
         run: python meet_auto_join.py
